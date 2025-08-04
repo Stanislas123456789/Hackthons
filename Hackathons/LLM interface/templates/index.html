@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chatbot LLaMA</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            Chatbot LLaMA
+        </div>
+        <div id="messages">
+            <div class="message bot-message">
+                Bonjour ! Je suis votre assistant LLaMA. Comment puis-je vous aider aujourd'hui ?
+            </div>
+        </div>
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Écris un message...">
+            <button onclick="sendMessage()">Envoyer</button>
+        </div>
+    </div>
+
+    <script>
+        // Add welcome message on page load
+        window.onload = function() {
+            const messagesDiv = document.getElementById("messages");
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        };
+
+        // Allow sending message with Enter key
+        document.getElementById("userInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+
+        async function sendMessage() {
+            const input = document.getElementById("userInput");
+            const message = input.value.trim();
+            
+            // Don't send empty messages
+            if (message === "") {
+                return;
+            }
+            
+            input.value = "";
+
+            const messagesDiv = document.getElementById("messages");
+            
+            // Add user message to chat
+            const userMessageDiv = document.createElement("div");
+            userMessageDiv.className = "message user-message";
+            userMessageDiv.textContent = message;
+            messagesDiv.appendChild(userMessageDiv);
+
+            // Scroll to bottom
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            try {
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+                
+                // Add bot message to chat
+                const botMessageDiv = document.createElement("div");
+                botMessageDiv.className = "message bot-message";
+                
+                if (data.error) {
+                    botMessageDiv.textContent = "Désolé, une erreur s'est produite : " + data.error;
+                } else {
+                    botMessageDiv.textContent = data.response;
+                }
+                
+                messagesDiv.appendChild(botMessageDiv);
+                
+                // Scroll to bottom
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            } catch (error) {
+                // Add error message to chat
+                const errorMessageDiv = document.createElement("div");
+                errorMessageDiv.className = "message bot-message";
+                errorMessageDiv.textContent = "Désolé, une erreur s'est produite lors de la communication avec le serveur.";
+                messagesDiv.appendChild(errorMessageDiv);
+                
+                // Scroll to bottom
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>
